@@ -3,11 +3,17 @@ import 'package:flutter_photo_view_tst/page2.dart';
 import 'package:flutter_photo_view_tst/page3.dart';
 
 void main() {
-  runApp(MaterialApp(initialRoute: '/', routes: {
-    '/': (BuildContext context) => HomePage(),
-    '/Page3': (BuildContext context) => Page3(),
-    '/Page2': (BuildContext context) => Page2(),
-  }));
+  runApp(
+    AppContextProvider(MaterialApp(
+//    home: HomePage(),
+      initialRoute: '/',
+      routes: {
+        '/': (BuildContext context) => HomePage(),
+        '/Page3': (BuildContext context) => Page3(),
+        '/Page2': (BuildContext context) => Page2(),
+      },
+    )),
+  );
 }
 
 class HomePage extends StatefulWidget {
@@ -43,10 +49,19 @@ class _HomePageState extends State<HomePage> {
             onTap: () {
               // 跳轉頁面
               NavigatorState nav = Navigator.of(context);
-              nav.pushNamed('/Page2', arguments: {
-                'title': 'Page2',
-                'photoName': urls[index]
-              }).then((res) => print(res));
+
+              // 設定 title , photo URL
+              AppContextProvider.of(context, 'main')?.title = "main $index 標題 ";
+              AppContextProvider.of(context, 'main')?.photoURL = urls[index];
+
+              nav
+                  .pushNamed('/Page2')
+                  .then((value) => print('page2回傳:${value}'));
+
+              // nav.pushNamed('/Page2', arguments: {
+              //   'title': 'Page2',
+              //   'photoName': urls[index]
+              // }).then((res) => print(res));
             },
             child: _buildImageView(urls[index]),
           );
@@ -92,5 +107,48 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+}
+
+/**
+ *
+ * AppContextProvider
+ *
+ * */
+class AppContextProvider extends InheritedModel<String> {
+  ///Add a field for your data
+  String? title;
+  String? photoURL;
+
+  AppContextProvider(Widget child) : super(child: child);
+
+  /// Typically the `inheritFrom` method is called from a model-specific
+  /// static `of` method
+  static AppContextProvider? of(BuildContext context, String aspect) {
+    return InheritedModel.inheritFrom<AppContextProvider>(context,
+        aspect: aspect);
+  }
+
+  ///Runs once for each widget to determine if that widget should be rebuild
+  ///Checks the aspect for a dependent widget and returns true if that
+  ///widget should be rebuild depending on a certain condition.
+  @override
+  bool updateShouldNotifyDependent(
+      AppContextProvider oldWidget, Set<String> aspects) {
+    if (aspects.contains('title') && title != oldWidget.title) {
+      print("title Only widget one is rebuild");
+      return true;
+    }
+    if (aspects.contains('photoURL') && photoURL != oldWidget.photoURL) {
+      print("photoURL Only widget two is rebuild");
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  bool updateShouldNotify(AppContextProvider oldWidget) {
+    print("First updateShouldNotify is checked");
+    return true;
   }
 }
